@@ -68,23 +68,50 @@ function getCoachTip(checkin: CheckinForm) {
 }
 
 function Login() {
+  const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [passwordRepeat, setPasswordRepeat] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     setMessage('')
     setError('')
+
+    if (mode === 'signup' && password !== passwordRepeat) {
+      setError('Die Passwörter stimmen nicht überein.')
+      return
+    }
+
+    if (password.length < 10) {
+      setError('Nutze bitte mindestens 10 Zeichen für dein Passwort.')
+      return
+    }
+
     setIsLoading(true)
 
-    const { error } = await supabase.auth.signInWithOtp({
+    if (mode === 'login') {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      setIsLoading(false)
+
+      if (error) {
+        setError('E-Mail-Adresse oder Passwort ist nicht korrekt.')
+      }
+
+      return
+    }
+
+    const { data, error } = await supabase.auth.signUp({
       email,
-      options: {
-        emailRedirectTo: `${window.location.origin}${import.meta.env.BASE_URL}`,
-      },
+      password,
     })
 
     setIsLoading(false)
@@ -94,9 +121,22 @@ function Login() {
       return
     }
 
-    setMessage(
-      'Magic Link wurde versendet. Prüfe dein E-Mail-Postfach und öffne den Link.',
-    )
+    if (!data.session) {
+      setMessage(
+        'Konto wurde angelegt. Prüfe dein E-Mail-Postfach, falls eine Bestätigung verlangt wird.',
+      )
+      return
+    }
+
+    setMessage('Konto angelegt. Du wirst weitergeleitet …')
+  }
+
+  function switchMode(nextMode: 'login' | 'signup') {
+    setMode(nextMode)
+    setMessage('')
+    setError('')
+    setPassword('')
+    setPasswordRepeat('')
   }
 
   return (
@@ -116,20 +156,71 @@ function Login() {
           Dein persönlicher Assistent für Tennis, Kondition und Fettabbau.
         </p>
 
-        <form onSubmit={handleLogin}>
+        <div className="auth-mode-switch">
+          <button
+            className={mode === 'login' ? 'auth-mode active' : 'auth-mode'}
+            type="button"
+            onClick={() => switchMode('login')}
+          >
+            Einloggen
+          </button>
+
+          <button
+            className={mode === 'signup' ? 'auth-mode active' : 'auth-mode'}
+            type="button"
+            onClick={() => switchMode('signup')}
+          >
+            Konto anlegen
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
           <label htmlFor="email">Deine E-Mail-Adresse</label>
 
           <input
             id="email"
             type="email"
+            autoComplete="email"
             placeholder="du@beispiel.de"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             required
           />
 
+          <label htmlFor="password">Passwort</label>
+
+          <input
+            id="password"
+            type="password"
+            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+            placeholder="Mindestens 10 Zeichen"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+          />
+
+          {mode === 'signup' && (
+            <>
+              <label htmlFor="password-repeat">Passwort wiederholen</label>
+
+              <input
+                id="password-repeat"
+                type="password"
+                autoComplete="new-password"
+                placeholder="Passwort erneut eingeben"
+                value={passwordRepeat}
+                onChange={(event) => setPasswordRepeat(event.target.value)}
+                required
+              />
+            </>
+          )}
+
           <button type="submit" disabled={isLoading}>
-            {isLoading ? 'Link wird versendet …' : 'Magic Link senden'}
+            {isLoading
+              ? 'Bitte warten …'
+              : mode === 'login'
+                ? 'Einloggen'
+                : 'Konto anlegen'}
           </button>
         </form>
 
@@ -137,7 +228,8 @@ function Login() {
         {error && <p className="error-message">{error}</p>}
 
         <p className="small-print">
-          Kein Passwort. Du erhältst einen einmalig nutzbaren Link per E-Mail.
+          Dein Passwort wird nicht in der App gespeichert. Supabase verwaltet
+          die Anmeldung.
         </p>
       </section>
     </main>

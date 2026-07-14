@@ -380,3 +380,32 @@ small {
     padding-left: 54px;
   }
 }
+.auth-mode-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin: 0 0 22px;
+  border-radius: 10px;
+  background: #e3e0d9;
+  padding: 4px;
+}
+
+.auth-mode {
+  margin: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #5e5d58;
+  padding: 10px 12px;
+}
+
+.auth-mode:hover {
+  background: transparent;
+  color: #0b0b0c;
+}
+
+.auth-mode.active {
+  background: #ffffff;
+  color: #0b0b0c;
+  box-shadow: 0 1px 3px rgb(11 11 12 / 12%);
+}
