@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
+import { ProgressCard } from './components/ProgressCard'
 import { createWeekTasks, dateKey, weekRange } from './lib/plan'
 import { supabase } from './lib/supabase'
 import './App.css'
@@ -164,6 +165,7 @@ function Dashboard({ userId }: { userId: string }) {
   const [isLoading, setIsLoading] = useState(true)
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
+  const [weightRefreshToken, setWeightRefreshToken] = useState(0)
 
   async function loadDashboard() {
     setIsLoading(true)
@@ -315,6 +317,7 @@ function Dashboard({ userId }: { userId: string }) {
     }
 
     setNotice('Check-in gespeichert.')
+    setWeightRefreshToken((currentToken) => currentToken + 1) 
   }
 
   async function addMeal(event: React.FormEvent<HTMLFormElement>) {
@@ -410,6 +413,12 @@ function Dashboard({ userId }: { userId: string }) {
           </p>
         </article>
       </section>
+<ProgressCard
+  userId={userId}
+  completedTasks={completedTasks}
+  plannedTasks={tasks.length}
+  refreshToken={weightRefreshToken}
+/>
 
       <section className="section-card">
         <p className="eyebrow">HEUTE</p>
